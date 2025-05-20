@@ -46,15 +46,20 @@ public class PointServiceTest {
         // given
         long id = 0L;
         long point = 30L;
-        UserPoint existingUserPoint = new UserPoint(id, 0, System.currentTimeMillis());
-        UserPoint newUserPoint = new UserPoint(id, point, System.currentTimeMillis());
+        long currentTimeMillis = System.currentTimeMillis();
+        UserPoint existingUserPoint = new UserPoint(id, 0, currentTimeMillis);
+        UserPoint newUserPoint = new UserPoint(id, point, currentTimeMillis);
+        PointHistory pointHistory = new PointHistory(0L, id, point, TransactionType.CHARGE, currentTimeMillis); // 생성자에서 anyLong() 대신 실제 값 사용
+
         // when
         when(userPointTable.selectById(id)).thenReturn(existingUserPoint);
         when(userPointTable.insertOrUpdate(id, point)).thenReturn(newUserPoint);
+        when(pointHistoryTable.insert(eq(id), eq(point), eq(TransactionType.CHARGE), anyLong())).thenReturn(pointHistory);  // 인자 매처를 사용할 때 모두 매처이거나 모두 구체적인 값이어야 함.
         UserPoint userPoint = pointService.charge(id, point);
         // then
         verify(userPointTable, times(1)).selectById(id);
         verify(userPointTable, times(1)).insertOrUpdate(id, point);
+        verify(pointHistoryTable, times(1)).insert(eq(id), eq(point), eq(TransactionType.CHARGE), anyLong()); // 각 메서드별로 호출 여부 검증
         assertEquals(point, userPoint.point());
         assertEquals(id, userPoint.id());
     }
@@ -68,7 +73,9 @@ public class PointServiceTest {
 
         // when
         // then
-        verifyNoInteractions(pointHistoryTable, userPointTable);
+        verify(userPointTable, never()).selectById(id);
+        verify(userPointTable, never()).insertOrUpdate(id, point);
+        verify(pointHistoryTable, never()).insert(eq(id), eq(point), eq(TransactionType.CHARGE), anyLong());
         assertThrows(PointException.class, () -> pointService.charge(id, point));
     }
 
@@ -81,6 +88,9 @@ public class PointServiceTest {
 
         // when
         // then
+        verify(userPointTable, never()).selectById(id);
+        verify(userPointTable, never()).insertOrUpdate(id, point);
+        verify(pointHistoryTable, never()).insert(eq(id), eq(point), eq(TransactionType.CHARGE), anyLong());
         verifyNoInteractions(pointHistoryTable, userPointTable);
         assertThrows(PointException.class, () -> pointService.charge(id, point));
     }
@@ -96,8 +106,11 @@ public class PointServiceTest {
         UserPoint existingUserPoint = new UserPoint(id, 100L, System.currentTimeMillis());
         when(userPointTable.selectById(id)).thenReturn(existingUserPoint);
 
-        verifyNoInteractions(pointHistoryTable, userPointTable);
+
         // then
         assertThrows(PointException.class, () -> pointService.charge(id, point));
+        verify(userPointTable, times(1)).selectById(id);
+        verify(userPointTable, never()).insertOrUpdate(id, point);
+        verify(pointHistoryTable, never()).insert(eq(id), eq(point), eq(TransactionType.CHARGE), anyLong());
     }
 }
