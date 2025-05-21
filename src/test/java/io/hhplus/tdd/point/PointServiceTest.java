@@ -138,4 +138,55 @@ public class PointServiceTest {
         verify(pointHistoryTable, times(1)).insert(eq(id), eq(usePoint), eq(TransactionType.USE), anyLong());
         assertEquals(300L, userPoint.point());
     }
+
+    @Test
+    @DisplayName("0포인트를 사용할 수 없다.")
+    void 포인트_사용_실패_0포인트() {
+        // given
+        long id = 0L;
+        long usePoint = 0L;
+
+        // when
+
+        // then
+        verify(userPointTable, never()).selectById(id);
+        verify(userPointTable, never()).insertOrUpdate(id, usePoint);
+        verify(pointHistoryTable, never()).insert(eq(id), eq(usePoint), eq(TransactionType.USE), anyLong());
+        assertThrows(PointException.class, () -> pointService.use(id, usePoint));
+    }
+
+    @Test
+    @DisplayName("마이너스 포인트를 사용할 수 없다.")
+    void 포인트_사용_실패_마이너스_포인트() {
+        // given
+        long id = 0L;
+        long usePoint = -200L;
+
+        // when
+
+        // then
+        verify(userPointTable, never()).selectById(id);
+        verify(userPointTable, never()).insertOrUpdate(id, usePoint);
+        verify(pointHistoryTable, never()).insert(eq(id), eq(usePoint), eq(TransactionType.USE), anyLong());
+        assertThrows(PointException.class, () -> pointService.use(id, usePoint));
+    }
+
+    @Test
+    @DisplayName("가지고 있는 포인트가 사용액보다 부족할 시 포인트를 사용할 수 있다.")
+    void 실패_포인트_부족() {
+        // given
+        long id = 0L;
+        long point = 500L;
+        long usePoint = 600L;
+        UserPoint existingUserPoint = new UserPoint(id, point, System.currentTimeMillis());
+
+        // when
+        when(userPointTable.selectById(id)).thenReturn(existingUserPoint);
+
+        // then
+        assertThrows(PointException.class, () -> pointService.use(id, usePoint));
+        verify(userPointTable, times(1)).selectById(id);
+        verify(userPointTable, never()).insertOrUpdate(id, usePoint);
+        verify(pointHistoryTable, never()).insert(eq(id), eq(usePoint), eq(TransactionType.USE), anyLong());
+    }
 }

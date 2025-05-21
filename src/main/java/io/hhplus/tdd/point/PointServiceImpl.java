@@ -49,7 +49,7 @@ public class PointServiceImpl implements PointService {
 
         UserPoint userPoint = userPointTable.selectById(id);
 
-        if (userPoint.point() - amount <= 0) {
+        if (userPoint.point() < amount) {
             throw new PointException("포인트가 부족합니다. 포인트를 충전 해주십시오.", "NEED_CHARGE_AMOUNT");
         }
 
