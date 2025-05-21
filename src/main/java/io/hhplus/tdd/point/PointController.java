@@ -55,7 +55,7 @@ public class PointController {
             @PathVariable long id,
             @RequestBody long amount
     ) {
-        return new UserPoint(0, 0, 0);
+        return pointService.use(id, amount); // TODO : 통합 테스트 필요
     }
 
     @ExceptionHandler(PointException.class)
