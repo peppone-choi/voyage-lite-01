@@ -1,7 +1,9 @@
 package io.hhplus.tdd.point;
 
+import io.hhplus.tdd.ErrorResponse;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -54,5 +56,12 @@ public class PointController {
             @RequestBody long amount
     ) {
         return new UserPoint(0, 0, 0);
+    }
+
+    @ExceptionHandler(PointException.class)
+    @ResponseStatus(HttpStatus.BAD_REQUEST)
+    public ErrorResponse handlePointException(final PointException ex) {
+        log.error(ex.getMessage(), ex);
+        return ex.getErrorResponse();
     }
 }
