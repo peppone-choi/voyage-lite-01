@@ -11,6 +11,8 @@ import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import java.util.List;
+
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.*;
@@ -214,5 +216,68 @@ public class PointServiceTest {
 
         assertThrows(PointException.class, () -> pointService.get(id));
         verify(userPointTable, times(1)).selectById(id);
+    }
+
+    @Test
+    @DisplayName("포인트 충전 / 사용 내역을 조회할 수 있다.")
+    void 포인트_충전_사용_내역을_조회할_수_있다() {
+        // given
+        long id = 0L;
+        List<PointHistory> pointHistory = List.of(
+                new PointHistory(0L, 0L, 1000, TransactionType.CHARGE, System.currentTimeMillis()),
+                new PointHistory(1L, 0L, 100, TransactionType.USE, System.currentTimeMillis())
+        );
+
+        // when
+        when(pointHistoryTable.selectAllByUserId(id)).thenReturn(pointHistory);
+
+        // then
+        List<PointHistory> foundHistory = pointService.getHistories(id);
+
+        assertEquals(pointHistory, foundHistory);
+        verify(pointHistoryTable, times(1)).selectAllByUserId(id);
+    }
+
+    @Test
+    @DisplayName("포인트 충전 / 혹은 사용 내역이 없으면 에러가 발생한다.")
+    void 실패_사용내역_없음() {
+        // given
+        long id = 0L;
+        List<PointHistory> pointHistory = List.of();
+
+        // when
+        when(pointHistoryTable.selectAllByUserId(id)).thenReturn(pointHistory);
+
+        // then
+        assertThrows(PointException.class, () -> pointService.getHistories(id));
+        verify(pointHistoryTable, times(1)).selectAllByUserId(id);
+    }
+
+    @Test
+    @DisplayName("최종 금액이 마이너스면 에러가 발생한다.")
+    void 실패_최종금액_마이너스() {
+        long id = 0L;
+        List<PointHistory> pointHistory = List.of(
+                new PointHistory(0L, 0L, 300L, TransactionType.CHARGE, System.currentTimeMillis()),
+                new PointHistory(1L, 0L, 400L, TransactionType.USE, System.currentTimeMillis())
+        );
+        when(pointHistoryTable.selectAllByUserId(id)).thenReturn(pointHistory);
+
+        assertThrows(PointException.class, () -> pointService.getHistories(id));
+        verify(pointHistoryTable, times(1)).selectAllByUserId(id);
+    }
+
+    @Test
+    @DisplayName("다른 유저의 내역이 합쳐들어오면 에러가 발생한다.")
+    void 실패_여러_사람의_내역() {
+        long id = 0L;
+        List<PointHistory> pointHistory = List.of(
+                new PointHistory(0L, 0L, 300L, TransactionType.CHARGE, System.currentTimeMillis()),
+                new PointHistory(1L, 1L, 400L, TransactionType.USE, System.currentTimeMillis())
+        );
+        when(pointHistoryTable.selectAllByUserId(id)).thenReturn(pointHistory);
+
+        assertThrows(PointException.class, () -> pointService.getHistories(id));
+        verify(pointHistoryTable, times(1)).selectAllByUserId(id);
     }
 }

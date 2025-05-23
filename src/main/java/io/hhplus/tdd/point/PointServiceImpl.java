@@ -5,6 +5,8 @@ import io.hhplus.tdd.database.PointHistoryTable;
 import io.hhplus.tdd.database.UserPointTable;
 import org.springframework.stereotype.Service;
 
+import java.util.List;
+
 @Service
 public class PointServiceImpl implements PointService {
 
@@ -71,5 +73,26 @@ public class PointServiceImpl implements PointService {
             throw new PointException("포인트 조회 중 오류가 발생했습니다. 포인트는 음수일 수 없습니다.", "POINT_IS_OVER_ZERO");
         }
         return userPoint;
+    }
+
+    @Override
+    public List<PointHistory> getHistories(long id) {
+        List<PointHistory> histories = pointHistoryTable.selectAllByUserId(id);
+        if (histories.isEmpty()) {
+            throw new PointException("해당 ID의 포인트 충전 혹은 사용 내역이 없습니다", "HISTORY_TABLE_SELECT_FAILED");
+        }
+        boolean isEqual = false;
+        for (PointHistory pointHistory : histories)
+            if (pointHistory.id() != id) {
+                isEqual = true;
+            }
+        if (isEqual) {
+            throw new PointException("해당 ID의 포인트 충전 및 사용 내역에 문제가 있습니다. 다른 사용자의 포인트 내역이 들어갔습니다.", "HISTORY_TABLE_ANOTHER_USER");
+        }
+        long finalAmount = histories.stream().mapToLong(PointHistory::amount).sum();
+        if (finalAmount < 0) {
+            throw new PointException("해당 ID의 포인트 충전 및 사용 내역에 문제가 있습니다. 최종 합계가 0 미만일 수 없습니다.", "HISTORY_TABLE_FINAL_AMOUNT_IS_OVER_ZERO");
+        }
+        return histories;
     }
 }
