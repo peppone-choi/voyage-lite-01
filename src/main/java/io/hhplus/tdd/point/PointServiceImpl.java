@@ -41,7 +41,7 @@ public class PointServiceImpl implements PointService {
             long newAmount = userPoint.point() + amount; // 충전 후 금액
 
             try {
-                pointHistoryTable.insert(id, newAmount, TransactionType.CHARGE, System.currentTimeMillis()); // 포인트 충전 내역 저장
+                pointHistoryTable.insert(id, amount, TransactionType.CHARGE, System.currentTimeMillis()); // 포인트 충전 내역 저장
             } catch (Exception e) {
                 throw new PointException("포인트 충전 내역을 저장 하지 못했습니다.", "HISTORY_TABLE_INSERT_FAILED");
             } // 어느 예외라도 터져서 포인트 충전 내역을을 저장하지 못하였을 경우
@@ -99,8 +99,17 @@ public class PointServiceImpl implements PointService {
         if (isEqual) {
             throw new PointException("해당 ID의 포인트 충전 및 사용 내역에 문제가 있습니다. 다른 사용자의 포인트 내역이 들어갔습니다.", "HISTORY_TABLE_ANOTHER_USER");
         }
-        long finalAmount = histories.stream().mapToLong(PointHistory::amount).sum();
-        if (finalAmount < 0) {
+        long calculatedBalance = 0;
+
+        for (PointHistory history : histories) {
+            if (history.type() == TransactionType.CHARGE) {
+                calculatedBalance += history.amount();
+            } else if (history.type() == TransactionType.USE) {
+                calculatedBalance -= history.amount();
+            }
+        }
+
+        if (calculatedBalance < 0) {
             throw new PointException("해당 ID의 포인트 충전 및 사용 내역에 문제가 있습니다. 최종 합계가 0 미만일 수 없습니다.", "HISTORY_TABLE_FINAL_AMOUNT_IS_OVER_ZERO");
         }
         return histories;
