@@ -23,14 +23,14 @@ public class PointController {
     public UserPoint point(
             @PathVariable long id
     ) {
-        return pointService.get(id); // TODO : 통합 테스트 필요
+        return pointService.get(id);
     }
 
     @GetMapping("{id}/histories")
     public List<PointHistory> history(
             @PathVariable long id
     ) {
-        return pointService.getHistories(id); // TODO : 통합 테스트 필요
+        return pointService.getHistories(id);
     }
 
     @PatchMapping("{id}/charge")
@@ -38,7 +38,7 @@ public class PointController {
             @PathVariable long id,
             @RequestBody long amount
     ) {
-        return pointService.charge(id, amount); // TODO : 통합 테스트 필요
+        return pointService.charge(id, amount);
     }
 
     @PatchMapping("{id}/use")
@@ -46,6 +46,6 @@ public class PointController {
             @PathVariable long id,
             @RequestBody long amount
     ) {
-        return pointService.use(id, amount); // TODO : 통합 테스트 필요
+        return pointService.use(id, amount);
     }
 }
