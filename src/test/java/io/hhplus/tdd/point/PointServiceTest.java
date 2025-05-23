@@ -189,4 +189,30 @@ public class PointServiceTest {
         verify(userPointTable, never()).insertOrUpdate(id, usePoint);
         verify(pointHistoryTable, never()).insert(eq(id), eq(usePoint), eq(TransactionType.USE), anyLong());
     }
+    @Test
+    @DisplayName("포인트를 조회할 수 있다")
+    void 포인트를_조회_할_수_있다() {
+        // given
+        long id = 0L;
+        UserPoint existingUserPoint = new UserPoint(id, 100L, System.currentTimeMillis());
+
+        // when
+        when(userPointTable.selectById(id)).thenReturn(existingUserPoint);
+
+        // then
+        UserPoint foundPoint = pointService.get(id);
+        assertEquals(100L, foundPoint.point());
+        verify(userPointTable, times(1)).selectById(id);
+    }
+
+    @Test
+    @DisplayName("조회 된 포인트는 마이너스일 수 없다.")
+    void 실패_마이너스_포인트() {
+        long id = 0L;
+        UserPoint existingUserPoint = new UserPoint(id, -100L, System.currentTimeMillis());
+        when(userPointTable.selectById(id)).thenReturn(existingUserPoint);
+
+        assertThrows(PointException.class, () -> pointService.get(id));
+        verify(userPointTable, times(1)).selectById(id);
+    }
 }

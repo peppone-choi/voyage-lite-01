@@ -63,4 +63,13 @@ public class PointServiceImpl implements PointService {
 
         return userPointTable.insertOrUpdate(userPoint.id(), newAmount);
     }
+
+    @Override
+    public UserPoint get(long id) {
+        UserPoint userPoint = userPointTable.selectById(id);
+        if (userPoint.point() < 0) {
+            throw new PointException("포인트 조회 중 오류가 발생했습니다. 포인트는 음수일 수 없습니다.", "POINT_IS_OVER_ZERO");
+        }
+        return userPoint;
+    }
 }
