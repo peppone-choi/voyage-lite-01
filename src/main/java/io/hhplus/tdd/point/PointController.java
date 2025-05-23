@@ -48,11 +48,4 @@ public class PointController {
     ) {
         return pointService.use(id, amount); // TODO : 통합 테스트 필요
     }
-
-    @ExceptionHandler(PointException.class)
-    @ResponseStatus(HttpStatus.BAD_REQUEST)
-    public ErrorResponse handlePointException(final PointException ex) {
-        log.error(ex.getMessage(), ex);
-        return ex.getErrorResponse();
-    }
 }
